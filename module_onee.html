@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Big Data: Primeiros Passos em R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ministrante: PGMAT-UFBA - Mateus Maia     LED Date: Um encontro sobre Estatística e Data Science" />
+    <meta name="date" content="2019-10-31" />
+    <link href="module_onee_files/font-awesome/css/fontawesome-all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="example.css" type="text/css" />
+    <link rel="stylesheet" href="maia-fonts.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Big Data: Primeiros Passos em R
+## ⚔ <br/> Módulo I: Introdução à conceitos de paralelismo
+### Ministrante: PGMAT-UFBA - Mateus Maia <br/> <br/> LED Date: Um encontro sobre Estatística e Data Science <br/> <br/>
+### 2019-10-31
+
+---
+
+
+#Processamento em paralelo
+
+&lt;br/&gt;
+
+.center[.big[O processamento em paralelo pode ser definido como sendo a utilização de mais de um processador de maneira simultânea para a realização de determinada tarefa.]]
+
+&lt;img src="hourglass.jpg" width="300" height="300" style="display: block; margin: auto;" /&gt;
+
+---
+#Cores
+&lt;br/&gt;
+&lt;img src="all_cores-01.png" width="400" height="240" style="display: block; margin: auto;" /&gt;
+---
+#Paralelismo Funcional
+
+- Cada processo realiza uma função "diferente" ou executa um código diferente em seções que são independentes
+
+- Exemplos:
+ - Trabalhos em grupos "mal feitos"
+ - Ensemble de algoritmos diferentes
+
+.center[![](functional-parallel-01.png)]
+
+---
+#Paralelismo de Dados
+
+- Cada proceso realiza o mesmo trabalho em conjuntos de dados únicos e independentes
+
+- Exemplos:
+ - 10 pintores pintando um muro
+ - Bagging
+
+.center[![](data-parallel-01.png)]
+
+---
+#CPU
+&lt;br/&gt;
+&lt;br/&gt;
+&lt;br/&gt;
+&lt;img src="false_cpu-01.png" width="153" style="display: block; margin: auto;" /&gt;
+---
+#A verdadeira CPU
+.pull-left[
+&lt;img src="false_cpu-01.png" width="153" style="display: block; margin: auto;" /&gt;
+&lt;br/&gt;
+&lt;br/&gt;
+&lt;br/&gt;
+
+&lt;img src="true_cpu.png" width="137" style="display: block; margin: auto;" /&gt;
+]
+.pull-right[
+- Muitos erram ao confundir a CPU com o que na verdade é o gabinete do equipamento
+
+- **CPU**(Central Processing Unit): Também conhecido como processador é responsável por calcular e realizar tarefas realizadas pelo usuário. É considerado o "cérebro" do PC.
+]
+---
+#CPU e Core
+
+.center[![](quadcore.png)]
+
+.center[.small[Ctrl+Alt+Del]]
+---
+#Sequencial *vs* Paralelo
+
+&lt;img src="sequencial-parallel-01.png" width="360" height="400" style="display: block; margin: auto;" /&gt;
+---
+class: inverse, center, middle
+
+# Um rápido ()
+
+---
+# *"The Joy of Functional Progamming"*
+
+.center[![](hadley_god.jpg)]
+
+.center[bit.do/fffDx]
+---
+class: inverse, center, middle
+
+# DoParallel: Abordagem de procesamento paralelo no R
+---
+#Pacotes *doParallel* &amp; *foreach*
+
+- O pacote *foreach* dá uma construção diferente para construção de laços em R, com o suporte em paralelo.
+
+- Em outras palavras, através do pacote, é possível tornar o código mais rápido, com poucas alterações ao dividir as iterações entre os cores
+
+
+```r
+#Importando as bibliotecas
+library(doParallel)
+library(foreach)
+#Passos inicias
+n_cl&lt;-detectCores()-1 #Por quê "-1" 
+cl&lt;-makeCluster(7) #A função makeCluster permite a criação da estrutura para o número de clusters.
+cl
+```
+
+```
+## socket cluster with 7 nodes on host 'localhost'
+```
+
+```r
+registerDoParallel(cl) #Através do register os cores são programados para serem utilizados no %dopar% 
+```
+---
+#Toy Example
+
+.pull-left[
+
+```r
+#Consideremos a estrutura de laço,
+#calcularemos a raiz dos números
+#de 1:4
+foreach(i=1:4) %do%{
+  sqrt(i)
+}
+```
+
+```
+## [[1]]
+## [1] 1
+## 
+## [[2]]
+## [1] 1.414214
+## 
+## [[3]]
+## [1] 1.732051
+## 
+## [[4]]
+## [1] 2
+```
+]
+.pull-right[
+
+```r
+#Para fazer a mesma estrutura em
+#paralelo basta utilizar %dopar%
+foreach(i=1:4) %dopar%{
+  sqrt(i)
+}
+```
+
+```
+## [[1]]
+## [1] 1
+## 
+## [[2]]
+## [1] 1.414214
+## 
+## [[3]]
+## [1] 1.732051
+## 
+## [[4]]
+## [1] 2
+```
+]
+
+---
+#Combine
+
+- O argumento ".combine" permite combinar os resultados de cada umas das repetições que ocorrerão em paralelo em cada cluster
+
+```r
+#Aqui o argumento 'c' representa o 'concatenar'
+foreach(n=c(10,100,1000),.combine = 'c') %dopar%{
+  rnorm(3,mean = n)
+}
+```
+
+```
+## [1]   10.772202    9.124171   12.388827   97.781367  100.997172  100.542970
+## [7]  999.851044 1000.070701 1000.521211
+```
+
+```r
+#"cbind" e "rbind" também podem ser utilizados
+foreach(n=c(10,100,1000),.combine = 'cbind') %dopar%{
+  rnorm(3,mean = n)
+}
+```
+
+```
+##       result.1 result.2  result.3
+## [1,]  8.745814  99.6529  999.7801
+## [2,] 10.881363 100.6233  998.8262
+## [3,] 11.910460 100.2246 1000.8986
+```
+
+```r
+#Operadores aritiméticos também são uma opção
+foreach(n=c(10,100,1000),.combine = '+') %dopar%{
+  rnorm(3,mean = n)
+}
+```
+
+```
+## [1] 1110.972 1109.092 1110.768
+```
+
+---
+#Aplicação: Holdout Repetido
+
+.center[![](holdout_rep-01.png)]
+
+---
+#Example: Parallel Validation
+
+- Considerando um a utilização de um *holdout* repetido *n* vezes, cada uma dessas repetições são independentes e podem ser parallelizadas.
+
+Construindo uma função para uma repetição temos:
+
+
+```r
+library(kernlab)
+ksvm_holdout&lt;-function(formula,data,split_ratio=0.7){
+  #Splitting
+  class_name&lt;-as.character(formula[[2]]) #Selecionando a variável resposta
+  training_index&lt;-sample(x = 1:nrow(data),
+                         size = round(split_ratio*nrow(data)))
+  training&lt;-data[training_index,] #Conjunto treinamento
+  test&lt;-data[-training_index,]    #Conjunto teste
+  #Training
+  mod&lt;-ksvm(formula,data=training) #Gerando modelo
+  pred&lt;-predict(mod,newdata=test)  #Armazenando predição
+  #Construindo matriz de confusão
+  cf&lt;-table(pred,test[,class_name])
+  acc&lt;-sum(diag(cf))/sum(cf)
+  return(acc)
+}
+```
+
+---
+#Example: Parallel Validation
+
+
+```r
+#Carregando a base de dados spam através
+#da library(kernlab)
+data(spam)
+
+#Rodando o svm com 20 repetições em paralelo
+system.time(
+spam_rep100&lt;-foreach(i=1:20,.combine = "c",.packages = "kernlab") %dopar%{
+  ksvm_holdout(formula = type~.,data = spam,split_ratio = 0.7)
+})
+```
+
+```
+##    user  system elapsed 
+##    0.04    0.03   11.60
+```
+
+```r
+spam_rep100[1:5]
+```
+
+```
+## [1] 0.9384058 0.9239130 0.9282609 0.9239130 0.9297101
+```
+
+```r
+#Rodando o svm com 20 repetições sequencialmente
+system.time(
+spam_rep100_seq&lt;-foreach(i=1:20,.combine = "c",.packages = "kernlab") %do%{
+  ksvm_holdout(formula = type~.,data = spam,split_ratio = 0.7)
+})
+```
+
+```
+##    user  system elapsed 
+##   19.63    0.52   20.16
+```
+
+---
+#Example: Parallel Validation
+
+- Utilizando o *foreach* e o *dorpar*, gere um boxplot dos valores do **Recall** considerando o modelo de **árvore de decisão** e o **holdout** com 100 repetições. .small[(Utilize o pacote: *rpart*)]
+
+- .small[**Dica**: utilizando o rpart, para o predict retornar a variável resposta utilize:
+        predict(modelo,newdata=dados,type='class')]
+
+.pull-left[
+&lt;br/&gt;
+&lt;br/&gt;
+`$$Recall=\frac{TP}{TP+FN}$$`
+]
+.pull-right[
+![](cf_matrix.png)
+]
+---
+#Example: Parallel Validation
+
+.pull-left[
+
+```r
+library(rpart)
+tree_holdout&lt;-function(formula,data,split_ratio=0.7){
+  #Splitting
+  class_name&lt;-as.character(formula[[2]])#Selecionando a variável resposta
+  training_index&lt;-sample(x = 1:nrow(data),
+                         size = round(split_ratio*nrow(data)))
+  training&lt;-data[training_index,]#Conjunto treinamento
+  test&lt;-data[-training_index,]   #Conjunto teste
+  #Training
+  mod&lt;-rpart(formula,
+             data=training)#Gerando modelo
+  pred&lt;-predict(mod,newdata=test,
+                type='class')#Armazenando predição
+  #Construindo matriz de confusão
+  cf&lt;-table(test[,class_name],pred)
+  recall&lt;-cf[1,1]/sum(cf[1,])
+  return(recall)
+}
+```
+]
+.pull-right[
+
+```r
+#Calculando os modelos em paralelo
+#através da função tree_holdout
+recall_tree_spam_rep100&lt;-foreach(i=1:10,
+                                 .combine = "c",
+                                 .packages = "rpart") %dopar%{
+  tree_holdout(formula = type~.,
+               data = spam,split_ratio = 0.7)
+}
+#Gerando boxplot
+boxplot(recall_tree_spam_rep100,
+        main="Tree Recall Rep=100")
+```
+
+&lt;img src="module_onee_files/figure-html/unnamed-chunk-14-1.png" width="300" height="300" /&gt;
+]
+---
+#Example: Random Forest
+
+
+```r
+#Carregando pacote
+library(randomForest)
+#Carregando a base
+data(spam)
+
+#Rodando randomForests com 250 árvores 
+#em paralelo, e combinando-as
+system.time(
+random_forest_100&lt;-foreach(ntrees=rep(250,8),
+                           .combine = randomForest::combine,.packages = 'randomForest') %dopar%{
+  randomForest(type~.,data=spam,ntree=ntrees)
+})
+```
+
+```
+##    user  system elapsed 
+##    1.41    0.33   15.44
+```
+
+```r
+random_forest_100
+```
+
+```
+## 
+## Call:
+##  randomForest(formula = type ~ ., data = spam, ntree = ntrees) 
+##                Type of random forest: classification
+##                      Number of trees: 2000
+## No. of variables tried at each split: 7
+```
+---
+#Example: Random Forest
+
+
+```r
+#Fazendo o mesmo porém,
+#sequencialmente
+system.time(
+random_forest_100_seq&lt;-foreach(ntrees=rep(250,8),.combine = randomForest::combine,.packages = 'randomForest') %do%{
+  randomForest(type~.,data=spam,ntree=ntrees)
+})
+```
+
+```
+##    user  system elapsed 
+##   34.51    0.22   34.87
+```
+
+```r
+random_forest_100_seq
+```
+
+```
+## 
+## Call:
+##  randomForest(formula = type ~ ., data = spam, ntree = ntrees) 
+##                Type of random forest: classification
+##                      Number of trees: 2000
+## No. of variables tried at each split: 7
+```
+---
+class: inverse, center, middle
+
+# Quando utilizar do %dopar%
+
+---
+# Quando utilizar do %dopar%
+
+- Para valer a pena o a utilização do %dopar% é necessário que a função em questão seja computacionalmente intensiva, caso contrário não é vantajoso a utilização do %dopar%
+
+&lt;br/&gt;
+&lt;br/&gt;
+.center[
+
+```r
+stopCluster(cl)
+```
+]
+
+---
+class: title-slide-final, middle
+background-image: url(logo.png)
+background-size: 150px
+background-position: 9% 15%
+
+# Perguntas?
+# Obrigado pela atenção
+
+.pull-down[
+
+&lt;a href="mailto:mateusmaia11@gmail.com"&gt;
+.white[<i class="fas  fa-paper-plane "></i>mateusmaia11@gmail.com]
+&lt;/a&gt;
+      
+&lt;a href="https://twitter.com/MateusMaiaM"&gt;
+.white[<i class="fab  fa-twitter "></i> @MateusMaiaM]
+&lt;/a&gt;
+
+&lt;a href="https://github.com/MateusMaiaDS"&gt;
+.white[<i class="fab  fa-github "></i> @MateusMaiaDS]
+&lt;/a&gt;
+
+&lt;a href="http://www.led.ufba.br/"&gt;
+.white[<i class="fas  fa-exclamation "></i> LED - Laboratório de Estatística e Datascience]
+&lt;/a&gt;
+
+&lt;a href="http://ime.ufba.br/"&gt;
+.white[<i class="fas  fa-graduation-cap "></i> Instituto de Matemática e Estatística - UFBA]
+&lt;/a&gt;
+
+&lt;br&gt;&lt;br&gt;&lt;br&gt;
+
+]
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

@@ -183,8 +183,6 @@ foreach(i=1:4) %dopar%{
 ---
 #Combine
 
-- O argumento ".combine" permite combinar os resultados de cada umas das repetições que ocorrerão em paralelo em cada cluster
-
 ```r
 #Aqui o argumento 'c' representa o 'concatenar'
 foreach(n=c(10,100,1000),.combine = 'c') %dopar%{

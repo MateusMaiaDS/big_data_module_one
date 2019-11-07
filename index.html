@@ -421,6 +421,26 @@ random_forest_100_seq
 ## No. of variables tried at each split: 7
 ```
 ---
+#Example: Adicionando um contador
+      
+Há muitos casos onde devido à inúmeras repetições é necessário a adição de um contador que indique em que etapa o processo total está em andamento. Para isto basta utilizar o auxílio de do pacote doSNOW que tem uma feature para esta situação.
+      
+```r
+#Carregando os pacotes e definindo as configurações
+#do pacote  doSNOW
+      
+opts <- list(progress=progress)
+cl <- makeSOCKcluster(7)
+registerDoSNOW(cl)
+
+
+#A estrutura é a mesma, basta adicionar um argumento na função foreach
+system.time(
+spam_rep100&lt;-foreach(i=1:20,.packages = "kernlab",.options.snow=opts) %dopar%{
+  ksvm_holdout(formula = type~.,data = spam,split_ratio = 0.7)
+})
+```
+---
 class: inverse, center, middle
 
 # Quando utilizar do %dopar%

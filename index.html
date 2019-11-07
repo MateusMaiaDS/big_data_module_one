@@ -430,6 +430,7 @@ Há muitos casos onde devido à inúmeras repetições é necessário a adição
 #do pacote  doSNOW
       
 library(doSNOW)      
+progress <- function(n) cat(sprintf("task %d is complete\n", n))
 opts <- list(progress=progress)
 cl <- makeSOCKcluster(7)
 registerDoSNOW(cl)

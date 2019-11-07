@@ -429,6 +429,7 @@ Há muitos casos onde devido à inúmeras repetições é necessário a adição
 #Carregando os pacotes e definindo as configurações
 #do pacote  doSNOW
       
+library(doSNOW)      
 opts <- list(progress=progress)
 cl <- makeSOCKcluster(7)
 registerDoSNOW(cl)
